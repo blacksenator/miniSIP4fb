@@ -1,0 +1,23 @@
+{
+    "name": "blacksenator/miniSIP4fb",
+    "type": "library",
+    "keywords": ["softphone", "SIP", "fritzbox"],
+    "homepage": "https://github.com/blacksenator/miniSIP4fb",
+    "description": "SIP client at FRITZ!Box to terminate inbound calls",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Volker Püschel",
+            "email": "knuffy@anasco.de",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.3|^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "blacksenator\\miniSIP4fb\\": "src/"
+        }
+    }
+}
