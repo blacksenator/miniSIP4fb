@@ -21,7 +21,7 @@ You can install it through Composer:
 
 ```js
 "require": {
-    "blacksenator/miniSIP4fb": "^1.0"
+    "blacksenator/mini-sip4fb": "dev-master"
 },
 ```
 

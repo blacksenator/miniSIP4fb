@@ -1,5 +1,5 @@
 {
-    "name": "blacksenator/miniSIP4fb",
+    "name": "blacksenator/mini-sip4fb",
     "type": "library",
     "keywords": ["softphone", "SIP", "fritzbox"],
     "homepage": "https://github.com/blacksenator/miniSIP4fb",
