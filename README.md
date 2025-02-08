@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This library provides a class for the limited use of SIP under PHP. With **miniSIP4fb**, a simple headless softphone can be operated as a client on a FRITZ!Box, with which primarily only an incoming call can be terminated. Because the AVM FRITZ!Box does not provide the option to end an incoming call via an API (e.g. with a [SOAP action][soap], these functions represent a workaround.
+This library provides a class for the limited use of SIP under PHP. With **miniSIP4fb**, a simple headless softphone can be operated as a client on a FRITZ!Box, with which primarily only an incoming call can be terminated. Because the AVM FRITZ!Box does not provide the option to end an incoming call via an API (e.g. with a [SOAP action][soap]), these functions represent a workaround.
 In combination with the manageable number of easy-to-use functions, other use cases are also conceivable, e.g. for controlling actuators through a call. Extensions may be necessary for this.
 
 I found some libraries for using SIP in PHP, but they followed a different functional approach, were in my opinion too complicated to use or had too much code for the intended purpose.
@@ -11,7 +11,7 @@ This software was created as an experiment. I wanted to test whether a virtual s
 
 ## Requirements
 
-* PHP 7.3 or higher
+* PHP 8.2 or higher
 * Composer (follow the installation guide at [https://getcomposer.org/download/][composer])
 * an IP phone configured on the FRITZ!Box
 
@@ -21,7 +21,7 @@ You can install it through Composer:
 
 ```js
 "require": {
-    "blacksenator/mini-sip4fb": "dev-master"
+    "blacksenator/mini-sip4fb": "^1.0"
 },
 ```
 

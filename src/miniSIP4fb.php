@@ -56,6 +56,8 @@ class miniSIP4fb
             $body = '',                         // default für qop="auth-int"
             $response = null,
             $authorization = null,
+            $sdpBody,
+            $bodyLength,
             $expires = self::EXPIRES,
             $leadTime = self::LEADTIME,
             $registered = false,
