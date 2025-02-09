@@ -1,2 +1,4 @@
 /.vscode
 workbench/
+vendor/
+composer.lock
