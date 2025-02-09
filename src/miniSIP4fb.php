@@ -55,7 +55,7 @@ class miniSIP4fb
             $nonce = '',                        // credential from server
             $body = '',                         // default für qop="auth-int"
             $response = null,
-            $authorization = null,
+            $authorization = '',
             $sdpBody,
             $bodyLength,
             $expires = self::EXPIRES,
@@ -182,7 +182,7 @@ class miniSIP4fb
         if (isset($this->received['nonce']) && isset($this->received['realm'])) {
             $this->setResponseHash($method);
             $this->authorization = <<<AUTHORIZATION
-Authorization: Digest username="$this->user", realm="$this->realm", nonce="$this->nonce", uri="sip:$this->serverIP", response="$this->response", algorithm=MD5\r
+Authorization: Digest username="$this->user", realm="$this->realm", nonce="$this->nonce", uri="sip:$this->serverIP", response="$this->response", algorithm=MD5
 AUTHORIZATION;
         }
     }
@@ -195,25 +195,26 @@ AUTHORIZATION;
     private function setRegistration()
     {
         $message = <<<REGISTRATION
-REGISTER sip:$this->serverIP SIP/2.0\r
-Via: SIP/2.0/UDP $this->clientIP:$this->sipPort;branch={$this->branch}{$this->branchSFX};rport\r
-From: "$this->device" <sip:$this->user@$this->serverIP>;tag=$this->tag\r
-To: "$this->device" <sip:$this->user@$this->serverIP>\r
-Call-ID: $this->callID\r
-CSeq: $this->sequence REGISTER\r
-Contact: <sip:$this->user@$this->clientIP>;+sip.instance="<urn:uuid:$this->uUID>"\r
+REGISTER sip:$this->serverIP SIP/2.0
+Via: SIP/2.0/UDP $this->clientIP:$this->sipPort;branch={$this->branch}{$this->branchSFX};rport
+From: "$this->device" <sip:$this->user@$this->serverIP>;tag=$this->tag
+To: "$this->device" <sip:$this->user@$this->serverIP>
+Call-ID: $this->callID
+CSeq: $this->sequence REGISTER
+Contact: <sip:$this->user@$this->clientIP>;+sip.instance="<urn:uuid:$this->uUID>"
 {$this->authorization}
-Allow: $this->allow\r
-Max-Forwards: 70\r
-Allow-Events: org.3gpp.nwinitdereg\r
-User-Agent: $this->device\r
-Supported: replaces, from-change\r
-Expires: $this->expires\r
-Content-Length: 0\r
-\r\n
+Allow: $this->allow
+Max-Forwards: 70
+Allow-Events: org.3gpp.nwinitdereg
+User-Agent: $this->device
+Supported: replaces, from-change
+Expires: $this->expires
+Content-Length: 0
 REGISTRATION;
-
-        return str_replace("\n\n", "\n", $message);
+        $message = str_replace("\r\n\r\n", "\r\n", $message);   // delete empty line(s)
+        $message .= "\r\n";                         // add the final blank line
+        
+        return $message;
     }
 
     /**
@@ -241,14 +242,14 @@ REGISTRATION;
     {
         $sessionID = rand(1000000000, 9999999999);
         $this->sdpBody = <<<SDPBODY
-v=0\r
-o=- $sessionID 1 IN IP4 $this->clientIP\r
-s=-\r
-c=IN IP4 $this->clientIP\r
-t=0 0\r
-m=audio $this->sdpPort RTP/AVP 0\r
-a=rtpmap:0 PCMU/8000\r
-a=sendrecv\r
+v=0
+o=- $sessionID 1 IN IP4 $this->clientIP
+s=-
+c=IN IP4 $this->clientIP
+t=0 0
+m=audio $this->sdpPort RTP/AVP 0
+a=rtpmap:0 PCMU/8000
+a=sendrecv
 \r\n
 SDPBODY;
         $this->bodyLength = strlen($this->sdpBody);
@@ -268,8 +269,8 @@ SDPBODY;
     private function setInviteResponse(string $response)
     {
         $to = $this->received['To'];
-        $contact = "Contact: <sip:$this->user@$this->clientIP>\r\n";
-        $supported = "Supported: replaces, from-change, 100rel\r\n";;
+        $contact = "Contact: <sip:$this->user@$this->clientIP>";
+        $supported = 'Supported: replaces, from-change, 100rel';;
         if ($response === 'Trying') {
             $code = '100';
             $contact = '';
@@ -282,20 +283,20 @@ SDPBODY;
             $to .= ';tag=' . $this->responseTag;
         }
         $message = <<<INVITERESPONSE
-SIP/2.0 $code $response\r
-Via: {$this->received['Via']}\r
-From: {$this->received['From']}\r
-To: $to\r
-Call-ID: {$this->received['Call-ID']}\r
-CSeq: $this->sequence INVITE\r
+SIP/2.0 $code $response
+Via: {$this->received['Via']}
+From: {$this->received['From']}
+To: $to
+Call-ID: {$this->received['Call-ID']}
+CSeq: $this->sequence INVITE
 {$contact}
-Allow: $this->allow\r
+Allow: $this->allow
 {$supported}
-Server: $this->device\r
-Content-Length: 0\r
-\r\n
+Server: $this->device
+Content-Length: 0
 INVITERESPONSE;
-        $message = str_replace(["\n\n"], "\n", $message);
+        $message = str_replace("\r\n\r\n", "\r\n", $message);   // delete empty line(s)
+        $message .= "\r\n";                         // add the final blank line
         /* see setSDPBody()
         if ($response === 'OK') {
             $message .= $this->sdpBody;
@@ -314,16 +315,16 @@ INVITERESPONSE;
         $this->setBranch();
 
         return <<<HANGUP
-BYE sip:{$this->received['contact sip']} SIP/2.0\r
-Via: SIP/2.0/UDP $this->clientIP:$this->sipPort;branch={$this->branch}{$this->idSFX};rport\r
-From: {$this->received['To']}\r
-To: {$this->received['From']}\r
-Call-ID: {$this->received['Call-ID']}\r
-CSeq: $this->sequence BYE\r
-Contact: {$this->received['Contact']}\r
-Max-Forwards: 70\r
-User-Agent: $this->device\r
-Content-Length: 0\r
+BYE sip:{$this->received['contact sip']} SIP/2.0
+Via: SIP/2.0/UDP $this->clientIP:$this->sipPort;branch={$this->branch}{$this->idSFX};rport
+From: {$this->received['To']}
+To: {$this->received['From']}
+Call-ID: {$this->received['Call-ID']}
+CSeq: $this->sequence BYE
+Contact: {$this->received['Contact']}
+Max-Forwards: 70
+User-Agent: $this->device
+Content-Length: 0
 \r\n
 HANGUP;
     }
@@ -453,7 +454,7 @@ HANGUP;
     {
         $maxAttemps = 10;
         $attemp = 0;
-        isset($this->authorization) && $this->authorization = null;
+        $this->authorization = '';
         do {
             $this->setBranch();
             if ($method === 'REGISTER') {
