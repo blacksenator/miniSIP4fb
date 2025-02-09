@@ -57,7 +57,7 @@ require_once './src/sipSocket2fb.php';
 use blacksenator\miniSIP4fb\miniSIP4fb;
 
 $softPhone = new miniSIP4fb('name', 'password');
-$softPhone->sendControlRequest('REGISTER');
+$softPhone->registerPhone();                            // initial Registration
 while (true) {
     $softPhone->refreshRegistration();
     // the FRITZ!Box sets an expiration of 300 sec.

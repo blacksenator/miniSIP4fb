@@ -449,7 +449,7 @@ HANGUP;
      * @param string $method
      * @return void
      */
-    public function sendControlRequest(string $method)
+    private function sendControlRequest(string $method)
     {
         $maxAttemps = 10;
         $attemp = 0;
@@ -507,13 +507,13 @@ HANGUP;
     }
 
     /**
-     * closes the open socket(s)
+     * registration SIP phone
      * 
      * @return void
      */
-    public function closeSocket()
+    public function registerPhone()
     {
-        $this->sockets->closeSocket();
+        $this->sendControlRequest('REGISTER');
     }
 
     /**
@@ -583,12 +583,24 @@ HANGUP;
     }
 
     /**
+     * refreshing the registration depending on the server response to expire
      * 
+     * @return void
      */
     public function refreshRegistration()
     {
         if (time() >= $this->nextRegistration) {
-            $this->sendControlRequest('REGISTER');
+            $this->registerPhone();
         }
+    }
+
+    /**
+     * closes the open socket(s)
+     * 
+     * @return void
+     */
+    public function closeSocket()
+    {
+        $this->sockets->closeSocket();
     }
 }
