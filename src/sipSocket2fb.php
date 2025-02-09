@@ -1,6 +1,6 @@
 <?php
 
-namespace blacksenator\sipSocket2fb;
+namespace blacksenator\miniSIP4fb;
 
 /**
  * This class provides socket functions to communicate from and to SIP Ports on  

@@ -22,7 +22,7 @@ namespace blacksenator\miniSIP4fb;
  * @license MIT
  */
  
-use blacksenator\sipSocket2fb\sipSocket2fb;
+use blacksenator\miniSIP4fb\sipSocket2fb;
 
 class miniSIP4fb
 {  
