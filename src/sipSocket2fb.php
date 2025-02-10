@@ -99,9 +99,8 @@ class sipSocket2fb
             if (!$this->getClientSocket()) {
                 continue;
             }
-            $this->log("{$this->getTimeStamp()} UDP client started. Sending request to {$this->remoteIP}:{$this->remoteSIPPort}...");
             fwrite($this->clientSocket, $request);
-            $this->log("{$this->getTimeStamp()} Message send:\r\n$request");
+            $this->log("{$this->getTimeStamp()} UDP client started. Request sendto {$this->remoteIP}:{$this->remoteSIPPort}:\r\n$request");
             stream_set_timeout($this->clientSocket, $this->timeOut);
             $response = fread($this->clientSocket, 2048);
             $info = stream_get_meta_data($this->clientSocket);
@@ -157,7 +156,7 @@ class sipSocket2fb
             $this->log("{$this->getTimeStamp()} Error in stream_select");
             return false;
         } elseif ($changedSockets === 0) {
-            $this->log("{$this->getTimeStamp()} No request received in the last $this->timeOut seconds");
+            // $this->log("{$this->getTimeStamp()} No request received in the last $this->timeOut seconds");
             return false;
         } else {
             return true;

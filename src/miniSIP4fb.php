@@ -199,7 +199,7 @@ class miniSIP4fb
         if (isset($this->received['nonce']) && isset($this->received['realm'])) {
             $this->setResponseHash($method);
             $this->authorization = <<<AUTHORIZATION
-Authorization: Digest username="$this->user", realm="$this->realm", nonce="$this->nonce", uri="sip:$this->serverIP", response="$this->response", algorithm=MD5\r
+Authorization: Digest username="$this->user", realm="$this->realm", nonce="$this->nonce", uri="sip:$this->serverIP", response="$this->response", algorithm=MD5
 AUTHORIZATION;
         }
     }
