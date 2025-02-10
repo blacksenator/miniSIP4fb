@@ -29,6 +29,7 @@ class miniSIP4fb
     const DEVICE   = 'miniSIP4fb',
         BRANCHPRFX = 'z9hG4bK',
         METHODS    = ['INVITE', 'ACK', 'BYE', 'CANCEL'],
+        MAX_INT_64 = 9999999999,                // upper limit random number
         EXPIRES    = 300,                       // default value in seconds
         LEADTIME   = 30;
 
@@ -44,6 +45,7 @@ class miniSIP4fb
             $branch,
             $allow,
             $checkMethods = [],
+            $maxInt,
             $tag,
             $callID,
             $sequence = 1,
@@ -73,6 +75,7 @@ class miniSIP4fb
         $this->clientIP = gethostbyname(php_uname('n'));
         $this->setBranch();
         $this->checkMethods = [...self::METHODS, $this->method];
+        $this->setMaxInt();
         $this->setTag();
         $this->setCallID();
         $this->setUUID();
@@ -114,11 +117,25 @@ class miniSIP4fb
     }
 
     /**
+     * setting maximum interger for random numbers (e.g. tag)
+     * 
+     * @return void
+     */
+    private function setMaxInt()
+    {
+        if ((8 * PHP_INT_SIZE) === 64) {
+            $this->maxInt = self::MAX_INT_64;
+        } else {
+            $this->maxInt = PHP_INT_MAX;
+        }
+    }
+
+    /**
      * set the tag (outbound)
      */
     private function setTag()
     {
-        $this->tag = rand(1000000000,9999999999);
+        $this->tag = rand(1000000000, $this->maxInt);
     }
 
     /**
@@ -182,7 +199,7 @@ class miniSIP4fb
         if (isset($this->received['nonce']) && isset($this->received['realm'])) {
             $this->setResponseHash($method);
             $this->authorization = <<<AUTHORIZATION
-Authorization: Digest username="$this->user", realm="$this->realm", nonce="$this->nonce", uri="sip:$this->serverIP", response="$this->response", algorithm=MD5
+Authorization: Digest username="$this->user", realm="$this->realm", nonce="$this->nonce", uri="sip:$this->serverIP", response="$this->response", algorithm=MD5\r
 AUTHORIZATION;
         }
     }
@@ -240,7 +257,7 @@ REGISTRATION;
      */
     private function setSDPBody()
     {
-        $sessionID = rand(1000000000, 9999999999);
+        $sessionID = rand(1000000000, $this->maxInt);
         $this->sdpBody = <<<SDPBODY
 v=0
 o=- $sessionID 1 IN IP4 $this->clientIP
