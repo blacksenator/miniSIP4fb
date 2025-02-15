@@ -30,8 +30,8 @@ class miniSIP4fb
         BRANCHPRFX = 'z9hG4bK',
         METHODS    = ['INVITE', 'ACK', 'BYE', 'CANCEL'],
         MAX_INT_64 = 9999999999,                // upper limit random number
-        EXPIRES    = 300,                       // default value in seconds
-        LEADTIME   = 30;
+        EXPIRES    = 3600,                      // default value in seconds
+        LEAD_VALUE = 0.75;              // typically 50-75% of expiration time
 
     private $user,                              // IP-phone password
             $password,                          // IP-phone password
@@ -41,14 +41,15 @@ class miniSIP4fb
             $sdpPort,
             $clientIP,                          // SIP client
             $sockets,
-            $method = 'REGISTER',               // REGISTER = initial method
+            $method,                        // keeps the current method in use
             $branch,
             $allow,
             $checkMethods = [],
             $maxInt,
             $tag,
             $callID,
-            $sequence = 1,
+            $myCallID,
+            $sequence,
             $branchSFX,
             $idSFX,
             $uUID,
@@ -60,8 +61,7 @@ class miniSIP4fb
             $authorization = '',
             $sdpBody,
             $bodyLength,
-            $expires = self::EXPIRES,
-            $leadTime = self::LEADTIME,
+            $expires,
             $registered = false,
             $nextRegistration,
             $responseTag;              
@@ -73,11 +73,14 @@ class miniSIP4fb
         $this->sockets = new sipSocket2fb($param);
         $this->setParameter($param);
         $this->clientIP = gethostbyname(php_uname('n'));
+        $this->setMethod('REGISTER');
+        $this->setSequence(1);
         $this->setBranch();
         $this->checkMethods = [...self::METHODS, $this->method];
+        $this->expires = self::EXPIRES;
         $this->setMaxInt();
         $this->setTag();
-        $this->setCallID();
+        $this->setMyCallID();
         $this->setUUID();
         // $this->setSDPBody() Explanation for the comment see below at function
     }
@@ -99,7 +102,19 @@ class miniSIP4fb
     }
 
     /**
+     * set method
+     * 
+     * @return void
+     */
+    private function setMethod(string $method)
+    {
+        $this->method = $method;
+    }
+
+    /**
      * set CSeq
+     * 
+     * @return void
      */
     private function setSequence(int $sequence)
     {
@@ -143,13 +158,13 @@ class miniSIP4fb
      * 
      * @return void 
      */
-    private function setCallID()
+    private function setMyCallID()
     {
         $uid = str_split(strtoupper(md5(uniqid())), 4);
         $this->idSFX = $this->idSFX ?? $uid[5] . $uid[6] . $uid[7];
         $this->branchSFX = $this->branchSFX ?? strtolower($this->idSFX);
         $idBody = $uid[0] . $uid[1] . '-'. $uid[2] . '-'. $uid[3] . '-'. $uid[4];
-        $this->callID = $idBody . '-' . $this->idSFX . '@' . $this->clientIP;
+        $this->myCallID = $idBody . '-' . $this->idSFX . '@' . $this->clientIP;
     }
 
     /**
@@ -216,7 +231,7 @@ REGISTER sip:$this->serverIP SIP/2.0
 Via: SIP/2.0/UDP $this->clientIP:$this->sipPort;branch={$this->branch}{$this->branchSFX};rport
 From: "$this->device" <sip:$this->user@$this->serverIP>;tag=$this->tag
 To: "$this->device" <sip:$this->user@$this->serverIP>
-Call-ID: $this->callID
+Call-ID: $this->myCallID
 CSeq: $this->sequence REGISTER
 Contact: <sip:$this->user@$this->clientIP>;+sip.instance="<urn:uuid:$this->uUID>"
 {$this->authorization}
@@ -230,7 +245,8 @@ Content-Length: 0
 REGISTRATION;
         $message = str_replace("\r\n\r\n", "\r\n", $message);   // delete empty line(s)
         $message .= "\r\n";                         // add the final blank line
-        
+        $this->callID = $this->myCallID;
+
         return $message;
     }
 
@@ -330,8 +346,7 @@ INVITERESPONSE;
     private function setHangUpRequest()
     {
         $this->setBranch();
-
-        return <<<HANGUP
+        $message = <<<HANGUP
 BYE sip:{$this->received['contact sip']} SIP/2.0
 Via: SIP/2.0/UDP $this->clientIP:$this->sipPort;branch={$this->branch}{$this->idSFX};rport
 From: {$this->received['To']}
@@ -344,6 +359,9 @@ User-Agent: $this->device
 Content-Length: 0
 \r\n
 HANGUP;
+        $this->callID = $this->received['Call-ID'];
+
+        return $message;
     }
 
     /**
@@ -397,8 +415,8 @@ HANGUP;
                     }
                 }
                 if (isset($this->received['From'])) {
-                    if (preg_match('/tag=(\d+)/', $this->received['From'], $matches)) {
-                        $this->received['tag'] = $matches[1];
+                    if (preg_match('/(?<=tag=)[A-Za-z0-9]+/', $this->received['From'], $matches)) {
+                        $this->received['fromtag'] = $matches[0];
                     }
                     if (preg_match('/"([^"]*)"/', $this->received['From'], $matches)) {
                         $this->received['name'] = $matches[1];
@@ -425,19 +443,16 @@ HANGUP;
     /**
      * Compare identificators
      * 
-     * 
-     * 
+     * @param int $sequence
      * @return bool
      */
-    private function compareIdentificators()
+    private function compareIdentificators($sequence)
     {
-        if (count($this->received)) {
-            if ($this->received['CSeq'] == $this->sequence &&
-                $this->received['Method'] == $this->method &&
-                $this->received['Call-ID'] == $this->callID &&
-                $this->received['tag'] == $this->tag) {
-                return true;
-            }
+        if (count($this->received) &&
+            $this->received['CSeq'] == $sequence &&
+            $this->received['Method'] == $this->method &&
+            $this->received['Call-ID'] == $this->callID) {
+            return true;
         }
 
         return false;
@@ -469,30 +484,37 @@ HANGUP;
      */
     private function sendControlRequest(string $method)
     {
+        $this->setMethod($method);
         $maxAttemps = 10;
         $attemp = 0;
         $this->authorization = '';
-        do {
+        $success = false;
+        while ($attemp < $maxAttemps) {
             $this->setBranch();
-            if ($method === 'REGISTER') {
+            if ($this->method === 'REGISTER') {
                 $this->setAuthorization($method);
                 $message = $this->setRegistration();
-            } elseif ($method === 'BYE') {
+            } elseif ($this->method === 'BYE') {
                 $message = $this->setHangUpRequest();
             } else {    // in case someone does not use the designated methods
-                $message = '';
-                $attemp = $maxAttemps;
+                break;
             }
+            $requestSequence = $this->sequence;
             if ($this->sendRequest($message)) {
-                $this->sequence = $this->received['CSeq'] + 1;
+                $this->setSequence($this->received['CSeq'] + 1);
+            }
+            if ($this->received['Response-Code'] === '500') {
+                break;
+            }
+            if ($this->received['Response-Code'] === '200' &&
+                $this->compareIdentificators($requestSequence)) {
+                $success = true;
+                break;
             }
             $attemp++;
-        } while ($this->received['Response-Code'] !== '200' &&
-                $attemp < $maxAttemps &&
-                !$this->compareIdentificators());
-        if ($method === 'REGISTER' &&               // successfully registered
-            $this->received['Response-Code'] === '200') {
-            $this->nextRegistration = time() + $this->expires - $this->leadTime;
+        }
+        if ($method === 'REGISTER' && $success) {   // successfully registered
+            $this->nextRegistration = time() + intval($this->expires * self::LEAD_VALUE);
             $this->registered = true;
         }
     }
@@ -541,7 +563,7 @@ HANGUP;
      * @param bool $silent
      * @return string|false
      */
-    public function perceiveCall(bool $silent = true)
+    public function perceiveCall(bool $silent = false)
     {
         $number = '';
         if ($this->registered &&
@@ -552,7 +574,7 @@ HANGUP;
             if ($this->sendResponse($this->setInviteResponse('Trying'))) {
                 $number = $this->received['number'];
                 $this->setResponseTag();                // setting an new tag
-                if ($silent && $this->sendResponse($this->setInviteResponse('Ringing'))) {
+                if (!$silent && $this->sendResponse($this->setInviteResponse('Ringing'))) {
                     $number = $this->received['number'];
                 }
                 return $number; 
