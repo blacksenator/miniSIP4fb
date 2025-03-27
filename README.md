@@ -3,11 +3,18 @@
 ## Purpose
 
 This library provides a class for the limited use of SIP under PHP. With **miniSIP4fb**, a simple headless softphone can be operated as a client on a FRITZ!Box, with which primarily only an incoming call can be terminated. Because the AVM FRITZ!Box does not provide the option to end an incoming call via an API (e.g. with a [SOAP action][soap]), these functions represent a workaround.
-In combination with the manageable number of easy-to-use functions, other use cases are also conceivable, e.g. for controlling actuators through a call. Extensions may be necessary for this.
 
 I found some libraries for using SIP in PHP, but they followed a different functional approach, were in my opinion too complicated to use or had too much code for the intended purpose.
 
 This software was created as an experiment. I wanted to test whether a virtual softphone (headless SIP client) could be used to accept and end incoming calls as easily as possible. Of course, the software has become more extensive than originally intended - also in order to cover as many eventualities as possible - even for this limited purpose.
+
+### Overview of features
+
+**miniSIP4fb** provides functions to interact as a simple softphone (SIP client) with a FRITZ!Box (SIP server) as you can see on the exchange of messages on the left.
+
+![overview][overview]
+
+Voice transmission is not supported. In combination with the manageable number of easy-to-use functions, other use cases are also conceivable, e.g. for controlling actuators through a call. Extensions may be necessary for this.
 
 ## Requirements
 
@@ -40,6 +47,7 @@ The following comments on this:
 * 3.7 Remember the password well (or better yet, copy it). You will not be able to access it later, but you must pass it when instantiating miniSIP4fb. Of course, you can change the password of this device if you forget it
 * 3.8 It doesn't matter which number you choose here. The software in its current state does not make calls
 * 3.9 Here you should select all the phone numbers used so that miniSIP4fb receives an INVITE for every call - regardless of the number.
+But of course, it can be useful to have **miniSIP4f** respond only to a designated phone number. Then, of course, the FRITZ!Box will only send an INVITE to that very phone number and thus to that telephony device
 * There is no need to activate the registration from the Internet. Apart from that, AVM explicitly advises against this
 
 ## Usage
@@ -103,7 +111,6 @@ key        |description                                      |default
 'timeOut'  |waiting for response or status changes (requests)|5 (sec)
 'timeZone' |your local time zone                             |'Europe/Berlin'
 'device'   |label of your softphone in SIP messages          |'miniSIP4fb'
-'timeZone' |your local time zone                             |'Europe/Berlin'
 'allow'    |supported methods                                |['INVITE', 'ACK', 'BYE', 'CANCEL']
 'logFile'  |path and filename                                |'' (no logging)
 
@@ -120,7 +127,7 @@ The [fritzsoap][fritzsoap] library already used in fbcallmonitor, on the other h
 
 ## Feedback
 
-If you enjoy this software, then I would be happy to receive your feedback, also in the form of user comments and descriptions of your experiences, e.g. in the IP Phone Forum. This puts the user community on a broader basis and their experiences and functional ideas can be incorporated into further development. In the end, these features will benefit everyone.
+If you enjoy this software, then I would be happy to receive your feedback, also in the form of user comments and descriptions of your experiences, e.g. in the [IP Phone Forum][ipPhoneforum]. This puts the user community on a broader basis and their experiences and functional ideas can be incorporated into further development. In the end, these features will benefit everyone.
 
 ## Improvements
 
@@ -149,3 +156,5 @@ Copyright (c) 2025 Volker Püschel
 [fritzsoap]: https://github.com/blacksenator/fritzsoap/blob/master/README.md
 [fbcmimprove]: https://github.com/blacksenator/fbcallrouter/blob/master/README.md#improvements
 [composer]: https://getcomposer.org/download/
+[overview]: /assets/miniSIP4fb.png
+[ipPhoneforum]: https://www.ip-phone-forum.de/threads/minisip4fb.321334/

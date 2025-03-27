@@ -7,15 +7,6 @@ namespace blacksenator\miniSIP4fb;
  * FRITZ!Box does not provide the option to end an incoming call via API (SOAP), 
  * these functions represent a workaround. The headless softphone can accept and 
  * end an incoming call after successfully registering as a SIP client.
- * 
- * Some notes on the messages defined in Heredoc:
- * 1. After analyzing the responses from FRITZ!Box, all lines are ended with a
- *    [CR][LF]. Hence the "\r" at the end ("\n" is implicitly determined by
- *    Heredoc itself).
- * 2. This has the advantage, that any blank lines created by variables can be
- *    easily eliminated, because...
- * 3. a SIP message must always end with a blank line - and only there or 
- *    between the announced payload (if content length > 0)
  *
  * @author Volker Püschel <knuffy@anasco.de>
  * @copyright Volker Püschel 2025
@@ -30,7 +21,7 @@ class miniSIP4fb
         BRANCHPRFX = 'z9hG4bK',
         METHODS    = ['INVITE', 'ACK', 'BYE', 'CANCEL'],
         MAX_INT_64 = 9999999999,                // upper limit random number
-        EXPIRES    = 3600,                      // default value in seconds
+        EXPIRES    = 3600,                      // default value in seconds (1h)
         LEAD_VALUE = 0.75;              // typically 50-75% of expiration time
 
     private $user,                              // IP-phone password
